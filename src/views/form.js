@@ -1,11 +1,24 @@
 import { TIPOS, TEMAS, NIVELES } from '../data/options.js';
-import { create } from '../services/storage.js';
+import { create, update } from '../services/storage.js';
 import { showToast } from '../components/toast.js';
 
-export function renderForm(app, resourceToEdit = null) {
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+export function renderForm(app, recurso = null) {
+  const isEdit = Boolean(recurso);
+  const selectedNivel = recurso ? (recurso.nivel || 'basico') : 'basico';
+
   app.innerHTML = `
     <div class="form-container">
-      <h1>Nuevo recurso</h1>
+      <h1>${isEdit ? 'Editar recurso' : 'Nuevo recurso'}</h1>
       <form id="resource-form" class="card" novalidate>
         <div class="form-group">
           <label for="titulo">Título</label>
@@ -15,6 +28,7 @@ export function renderForm(app, resourceToEdit = null) {
             name="titulo"
             class="input"
             placeholder="Ej. Guía definitiva de CSS Grid"
+            value="${recurso ? escapeAttr(recurso.titulo) : ''}"
           />
         </div>
 
@@ -26,6 +40,7 @@ export function renderForm(app, resourceToEdit = null) {
             name="url"
             class="input"
             placeholder="https://ejemplo.com"
+            value="${recurso ? escapeAttr(recurso.url) : ''}"
           />
         </div>
 
@@ -34,7 +49,7 @@ export function renderForm(app, resourceToEdit = null) {
             <label for="tipo">Tipo</label>
             <select id="tipo" name="tipo" class="select">
               <option value="">Selecciona...</option>
-              ${TIPOS.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
+              ${TIPOS.map(t => `<option value="${t.value}" ${recurso && recurso.tipo === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
             </select>
           </div>
 
@@ -42,7 +57,7 @@ export function renderForm(app, resourceToEdit = null) {
             <label for="tema">Tema</label>
             <select id="tema" name="tema" class="select">
               <option value="">Selecciona...</option>
-              ${TEMAS.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
+              ${TEMAS.map(t => `<option value="${t.value}" ${recurso && recurso.tema === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -56,7 +71,7 @@ export function renderForm(app, resourceToEdit = null) {
                   type="radio"
                   name="nivel"
                   value="${n.value}"
-                  ${n.value === 'basico' ? 'checked' : ''}
+                  ${n.value === selectedNivel ? 'checked' : ''}
                 />
                 ${n.label}
               </label>
@@ -66,14 +81,14 @@ export function renderForm(app, resourceToEdit = null) {
 
         <div class="form-group">
           <label class="checkbox-option">
-            <input type="checkbox" name="favorito" id="favorito" />
+            <input type="checkbox" name="favorito" id="favorito" ${recurso && recurso.favorito ? 'checked' : ''} />
             Favorito
           </label>
         </div>
 
         <div class="form-actions">
-          <a href="#/" class="btn btn-secondary">Cancelar</a>
-          <button type="submit" class="btn btn-primary">Guardar</button>
+          <a href="#/recursos" class="btn btn-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Actualizar' : 'Guardar'}</button>
         </div>
       </form>
     </div>
@@ -144,16 +159,23 @@ export function renderForm(app, resourceToEdit = null) {
       return;
     }
 
-    create({
+    const payload = {
       titulo,
       url,
       tipo,
       tema,
       nivel: data.nivel || 'basico',
       favorito: data.favorito
-    });
+    };
 
-    showToast('Recurso guardado');
+    if (recurso) {
+      update(recurso.id, payload);
+      showToast('Recurso actualizado');
+    } else {
+      create(payload);
+      showToast('Recurso guardado');
+    }
+
     form.reset();
     window.location.hash = '#/recursos';
   });
