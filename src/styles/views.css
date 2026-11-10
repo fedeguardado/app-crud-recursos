@@ -158,6 +158,24 @@
   color: var(--color-text-secondary);
 }
 
+.resource-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.btn-danger {
+  background-color: var(--color-error);
+  color: var(--color-white, #ffffff);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background-color: var(--color-error-hover, var(--color-error));
+  opacity: 0.9;
+}
+
 /* Vista de Formulario */
 .form-container {
   max-width: 640px;

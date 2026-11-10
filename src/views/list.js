@@ -1,5 +1,6 @@
-import { getAll } from '../services/storage.js';
+import { getAll, getById, remove } from '../services/storage.js';
 import { TIPOS, TEMAS, NIVELES } from '../data/options.js';
+import { showToast } from '../components/toast.js';
 
 function getLabel(lista, value) {
   const item = lista.find(element => element.value === value);
@@ -67,11 +68,41 @@ export function renderList(app) {
 
             <div class="resource-card__footer">
               <span>${formattedDate}</span>
-              <a href="#/editar/${resource.id}" class="btn btn-secondary">Editar</a>
+              <div class="resource-card__actions">
+                <a href="#/editar/${resource.id}" class="btn btn-secondary">Editar</a>
+                <button type="button" class="btn btn-danger" data-id="${resource.id}">Eliminar</button>
+              </div>
             </div>
           </div>
         `;
       }).join('')}
     </div>
   `;
+
+  const grid = app.querySelector('.resource-grid');
+  if (grid) {
+    grid.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('[data-id]');
+      if (!deleteBtn) return;
+
+      const id = deleteBtn.dataset.id;
+      const recurso = getById(id);
+
+      if (!recurso) {
+        showToast('Recurso no encontrado', 'error');
+        return;
+      }
+
+      const confirmed = confirm('¿Eliminar "' + recurso.titulo + '"? Esta acción no se puede deshacer.');
+      if (confirmed) {
+        const removed = remove(id);
+        if (removed) {
+          showToast('Recurso eliminado');
+          renderList(app);
+        } else {
+          showToast('Recurso no encontrado', 'error');
+        }
+      }
+    });
+  }
 }
